@@ -1,7 +1,5 @@
 package com.adognamedspot.lastseen;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -10,7 +8,6 @@ import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,9 +21,12 @@ public final class LastSeen extends JavaPlugin implements Listener {
 	public List<Long> LastList_Time = new ArrayList<Long>();
 	public String EMPTY = "-EMPTY VOiD-";
 	
+	private static LastSeen instance;
+	
     @Override
     public void onEnable() {
         // TODO Load LastList from disk
+    	instance = this;
     	getServer().getPluginManager().registerEvents(this, this);
     	setDefaultLastList();
     }
@@ -63,34 +63,20 @@ public final class LastSeen extends JavaPlugin implements Listener {
 	@EventHandler
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		// Called when a player leaves a server
-		logPlayerQuit(event);
+		PlayerData.Quit(event.getPlayer());
+    	HandleLastList(event.getPlayer());
 	}
 
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		// TODO Insert logic to be performed when the Player joins the server
+		PlayerData.Join(event.getPlayer());
 	}
 
-    public void logPlayerQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        String PlayerFile = getDataFolder() + File.separator + "UserID" + File.separator + player.getName() + ".yml";
-        getLogger().log(Level.WARNING, "PlayerFile: " + PlayerFile);
-        YamlConfiguration UserData = new YamlConfiguration();
-        UserData.createSection("Name");
-        UserData.set("Name", player.getName());
-        UserData.createSection("UUiD");
-        UserData.set("UUiD", player.getUniqueId().toString());
-        UserData.createSection("Time");
-    	UserData.set("Time", System.currentTimeMillis());
-    	try {
-			UserData.save(PlayerFile);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-    	HandleLastList(player);
+    public static LastSeen getInstance() {
+    	return instance;
     }
-    
+ 
     public void HandleLastList(Player player) {
     	LastList_Name.set(4, LastList_Name.get(3));
     	LastList_Time.set(4, LastList_Time.get(3));
@@ -128,24 +114,22 @@ public final class LastSeen extends JavaPlugin implements Listener {
     	// Make sure the player is online.
     	if (target == null) {
     		// Player is not currently online
-            String PlayerFile = getDataFolder() + File.separator + "UserID" + File.separator + arg + ".yml";
-    		File f = new File(PlayerFile);
-    			YamlConfiguration UserData = YamlConfiguration.loadConfiguration(f);
-    			Long LastOnline = (Long) UserData.get("Time");
-    			if (LastOnline == null) {
-        			sender.sendMessage(arg + " has never been seen.");
-        			return true;    				
-    			}
-    			sender.sendMessage(UserData.get("Name") + " was last seen " + wayback(System.currentTimeMillis() - LastOnline) + " ago.");
-    			return true;
+    		Long LastOnline = PlayerData.lastSeen(arg);
+    		if (LastOnline == 0) {
+        		sender.sendMessage(arg + " has never been seen.");
+        		return true;    				
+    		}
+    		sender.sendMessage(arg + " was last seen " + wayback(System.currentTimeMillis() - LastOnline) + " ago.");
+    		return true;
     	} else {
+    		// Player is currently online
     		sender.sendMessage(target.getName() + " is currently online!");
     		return true;
     	}
     }
     
     public boolean PlayerInfo(CommandSender sender, String arg) {
-    	
+    	PlayerData.getInfo(sender, arg);
     	return true;
     }
     
