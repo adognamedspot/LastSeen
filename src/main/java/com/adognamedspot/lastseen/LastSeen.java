@@ -51,7 +51,7 @@ public final class LastSeen extends JavaPlugin implements Listener {
     	        return false;
     	    }
     	    return seenPlayer(sender, args[0]);
-    	} else if (cmd.getName().equalsIgnoreCase("seen")) {
+    	} else if (cmd.getName().equalsIgnoreCase("info")) {
 	        if (args.length != 1) {
 	            return false;
 	        }
@@ -105,36 +105,19 @@ public final class LastSeen extends JavaPlugin implements Listener {
     }
     
     public boolean lastPlayer(CommandSender sender, String arg) {
-    	boolean noone = true;
-    	sender.sendMessage("These guys were just here a bit ago..");
-    	sender.sendMessage("----------------------------------------");
-    	if (LastList_Name.get(4) != EMPTY) {
-    	    sender.sendMessage("5. - " + LastList_Name.get(4) + " - " + 
-    			wayback(System.currentTimeMillis() - (Long) LastList_Time.get(4)));
-    	    noone = false;
-    	}
-    	if (LastList_Name.get(3) != EMPTY) {
-    	    sender.sendMessage("4. - " + LastList_Name.get(3) + " - " + 
-    			wayback(System.currentTimeMillis() - (Long) LastList_Time.get(3)));
-	        noone = false;
-	    }
-    	if (LastList_Name.get(2) != EMPTY) {
-    	    sender.sendMessage("3. - " + LastList_Name.get(2) + " - " + 
-    			wayback(System.currentTimeMillis() - (Long) LastList_Time.get(2)));
-    	    noone = false;
-    	}
-    	if (LastList_Name.get(1) != EMPTY) {
-        	sender.sendMessage("2. - " + LastList_Name.get(1) + " - " + 
-    			wayback(System.currentTimeMillis() - (Long) LastList_Time.get(1)));
-    	    noone = false;
-    	}
     	if (LastList_Name.get(0) != EMPTY) {
-        	sender.sendMessage("1. - " + LastList_Name.get(0) + " - " + 
-    			wayback(System.currentTimeMillis() - (Long) LastList_Time.get(0)));
-    	    noone = false;
+    		sender.sendMessage("These guys left just a bit ago..");
+    		sender.sendMessage("----------------------------------------");
     	}
-    	if (noone) {
-    		sender.sendMessage("No one has been on since the last reboot.");
+    	else {
+    		sender.sendMessage("No one has left since the last reboot.");
+    	}
+    	
+    	for (int i = 4; i >= 0; i--) {
+        	if (LastList_Name.get(i) != EMPTY) {
+        	    sender.sendMessage((i+1) +". - " + LastList_Name.get(i) + " - " + 
+        			wayback(System.currentTimeMillis() - (Long) LastList_Time.get(i)));
+        	}    		
     	}
     	return true;
     }
