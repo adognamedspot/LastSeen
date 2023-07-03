@@ -1,0 +1,37 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.adognamedspot</groupId>
+  <artifactId>LastSeen</artifactId>
+  <version>0.1.1-ALPHA</version>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <release>17</release>
+        </configuration>
+      </plugin>
+    </plugins>
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory> <!-- (your resources folder location) -->
+            <filtering>true</filtering> <!-- this is the important part, it's what replaces, filters, all placeholders in the resources folder (such as ${project.version} in plugin.yml) -->
+         </resource>
+    </resources>
+  </build>
+<repositories>
+    <repository>
+        <id>spigot</id>
+        <name>spigot repository</name>
+        <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+    </repository>
+</repositories>
+<dependencies>
+  	<dependency>
+  		<groupId>org.spigotmc</groupId>
+  		<artifactId>spigot-api</artifactId>
+  		<version>1.18.1-R0.1-SNAPSHOT</version>
+  	</dependency>
+</dependencies>
+</project>

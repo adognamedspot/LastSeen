@@ -1,0 +1,23 @@
+name: LastSeen
+main: com.adognamedspot.lastseen.LastSeen
+version: ${project.version}
+author: A DoG NaMeD SpoT
+api-version: 1.19
+commands:
+   last:
+      description: Displays the last few players to log in.
+      usage: /<command>
+      permission: <plugin name>.last
+      permission-message: You don't have <permission>
+   seen:
+      description: Displays the last time a player was seen onine.
+      usage: /<command> player
+      permission: <plugin name>.seen
+      permission-message: You don't have <permission>
+   info:
+      description: Displays in depth info on a player.
+      usage: /<command> player
+      permission: <plugin name>.info
+      permission-message: You don't have <permission>
+      
+      
