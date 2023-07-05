@@ -58,6 +58,8 @@ public class PlayerData {
 		
 		Config.set("Last.In", System.currentTimeMillis());
 		save(Config, File);
+		
+		processStats(player, 0);
 	}
 
 	public static void Quit(Player player) {
@@ -81,27 +83,23 @@ public class PlayerData {
 	public static FileConfiguration createFile(File file, Player player) {
         try {
             FileConfiguration playerData = YamlConfiguration.loadConfiguration(file);
-            List<String> Names = new ArrayList<String>();
-            List<String> IPs = new ArrayList<String>();
-            Names.add(player.getName());
-            IPs.add(player.getAddress().toString());
             
             playerData.createSection("Data");
             playerData.set("Data.Name", player.getName());
             playerData.set("Data.UUID", player.getUniqueId().toString());
-            playerData.set("Data.Join Date.Month", getMonth());
-            playerData.set("Data.Join Date.Day", getDay());
-            playerData.set("Data.Join Date.Year", getYear());
+            playerData.set("Data.Join Date.Month", Integer.parseInt(getMonth()));
+            playerData.set("Data.Join Date.Day", Integer.parseInt(getDay()));
+            playerData.set("Data.Join Date.Year", Integer.parseInt(getYear()));
             playerData.createSection("Last");
             playerData.set("Last.In", 0);
             playerData.set("Last.Out", 0);
             playerData.createSection("Stats");
             playerData.createSection("Stats.Yearly");
-            playerData.set("Stats.Yearly.Year", getYear());
+            playerData.set("Stats.Yearly.Year", Integer.parseInt(getYear()));
             playerData.set("Stats.Yearly.Total", 0);
             playerData.set("Stats.Yearly.AllTime", 0);
             playerData.createSection("Stats.Monthly");
-            playerData.set("Stats.Monthly.Month", getMonth());
+            playerData.set("Stats.Monthly.Month", Integer.parseInt(getMonth()));
             playerData.set("Stats.Monthly.Total", 0);
             playerData.set("Stats.Monthly.AllTime", 0);
             playerData.createSection("Stats.Weekly");
@@ -109,10 +107,9 @@ public class PlayerData {
             playerData.set("Stats.Weekly.Total", 0);
             playerData.set("Stats.Weekly.AllTime", 0);
             playerData.createSection("Stats.Daily");
-            playerData.set("Stats.Daily.Day", getDay());
+            playerData.set("Stats.Daily.Day", Integer.parseInt(getDay()));
             playerData.set("Stats.Daily.Total", 0);
             playerData.set("Stats.Daily.AllTime", 0);
-
 
             playerData.save(file);
             return playerData;
@@ -186,7 +183,7 @@ public class PlayerData {
 			// Still the same month, add on sessionTotal
 			Stats[1][1] = Stats[1][1] + sessionTotal;
 		} else {
-			// New month, reset Month, Week, Day stats
+			// New month, reset Month, Day stats
 			Stats[1][0] = Integer.parseInt(getMonth());
 			Stats[1][1] = sessionTotal;
 			Stats[3][0] = Integer.parseInt(getDay());
@@ -254,7 +251,7 @@ public class PlayerData {
 		if (config == null)
 			return 0;
 		
-		return (long)config.getDouble(name + ".Out");
+		return (long)config.getDouble("Last.Out");
 	}
 
 	public static void getInfo(CommandSender sender, String name) {
@@ -265,19 +262,45 @@ public class PlayerData {
 		if (config == null)
 			return;
 		
-		sender.sendMessage("--------------------------------------------------");
-		sender.sendMessage(" Name: " + name);
-		sender.sendMessage(" UUiD: " + config.getString("Data.UUID"));
-		sender.sendMessage("--------------------------------------------------");
+		sender.sendMessage(ChatColor.AQUA + "--------------------------------------------------");
+		sender.sendMessage(ChatColor.GRAY + "      Name: " + ChatColor.WHITE + name);
+		sender.sendMessage(ChatColor.GRAY + "      UUiD: " + ChatColor.WHITE + config.getString("Data.UUID"));
+		sender.sendMessage(ChatColor.GRAY + " Join Date: " + ChatColor.WHITE
+				+ MonthName(config.getInt("Data.Join Date.Month")) + " " 
+				+ config.getInt("Data.Join Date.Day") + ", " 
+				+ config.getInt("Data.Join Date.Year"));
 		if (target != null) {
-			sender.sendMessage(ChatColor.GREEN + "Player is online!");
-			sender.sendMessage(" Total Playtime: " 
-					+ LastSeen.wayback((long)((System.currentTimeMillis() - config.getDouble(name + ".In")) + config.getDouble(name + ".Total"))));
+			sender.sendMessage(ChatColor.AQUA + "-----------------------" 
+					+ ChatColor.GREEN + "ONLiNE" + ChatColor.AQUA + "----------------------");
+			sender.sendMessage(ChatColor.GRAY + " Session Playtime: " + ChatColor.WHITE
+					+ LastSeen.wayback((long)((System.currentTimeMillis() - config.getDouble("Last.In")))));
 		} else {
-			sender.sendMessage(" Last seen: " + LastSeen.wayback(System.currentTimeMillis() - lastSeen(name)) + " ago.");
-			sender.sendMessage(" Total Playtime: " + LastSeen.wayback((long)config.getDouble(name + ".Total")));
+			sender.sendMessage(ChatColor.AQUA + "----------------------" 
+					+ ChatColor.RED + "OFFLiNE" + ChatColor.AQUA + "----------------------");
+			sender.sendMessage(ChatColor.GRAY + " Last seen: " + ChatColor.WHITE
+				+ LastSeen.wayback(System.currentTimeMillis() - lastSeen(name)) + " ago.");
 		}
-		sender.sendMessage("--------------------------------------------------");	
+		sender.sendMessage(ChatColor.AQUA + "-------------------" 
+			+ ChatColor.YELLOW + "Total Playtime" + ChatColor.AQUA + "--------------------");	
+		sender.sendMessage(ChatColor.GRAY + " This Year: " + ChatColor.WHITE
+			+ LastSeen.wayback((long)config.getDouble("Stats.Yearly.Total")));
+		sender.sendMessage(ChatColor.GRAY + "This Month: " + ChatColor.WHITE
+			+ LastSeen.wayback((long)config.getDouble("Stats.Monthly.Total")));
+		sender.sendMessage(ChatColor.GRAY + " This Week: " + ChatColor.WHITE
+			+ LastSeen.wayback((long)config.getDouble("Stats.Weekly.Total")));
+		sender.sendMessage(ChatColor.GRAY + "     Today: " + ChatColor.WHITE
+			+ LastSeen.wayback((long)config.getDouble("Stats.Daily.Total")));
+		sender.sendMessage(ChatColor.AQUA + "-------------------" 
+			+ ChatColor.DARK_AQUA + "All-Time Stats" + ChatColor.AQUA + "--------------------");	
+		sender.sendMessage(ChatColor.GRAY + " Best Year: " + ChatColor.WHITE
+			+ LastSeen.wayback((long)config.getDouble("Stats.Yearly.AllTime")));
+		sender.sendMessage(ChatColor.GRAY + "Best Month: " + ChatColor.WHITE
+			+ LastSeen.wayback((long)config.getDouble("Stats.Monthly.AllTime")));
+		sender.sendMessage(ChatColor.GRAY + " Best Week: " + ChatColor.WHITE
+			+ LastSeen.wayback((long)config.getDouble("Stats.Weekly.AllTime")));
+		sender.sendMessage(ChatColor.GRAY + "  Best Day: " + ChatColor.WHITE
+			+ LastSeen.wayback((long)config.getDouble("Stats.Daily.AllTime")));
+		sender.sendMessage(ChatColor.AQUA + "--------------------------------------------------");	
 	}
 	
 	public static String getYear() {
@@ -305,6 +328,36 @@ public class PlayerData {
         Calendar calendar = Calendar.getInstance();
         int weekNumber = calendar.get(Calendar.WEEK_OF_YEAR);
         return weekNumber;
+	}
+	
+	public static String MonthName(int month) {
+		switch (month) {
+		case 1:
+			return "January";
+		case 2:
+			return "February";
+		case 3:
+			return "March";
+		case 4:
+			return "April";
+		case 5:
+			return "May";
+		case 6:
+			return "June";
+		case 7:
+			return "July";
+		case 8:
+			return "August";
+		case 9:
+			return "September";
+		case 10:
+			return "October";
+		case 11:
+			return "November";
+		case 12:
+			return "December";
+		}
+		return null;
 	}
 	
 	public List<String> CSVtoList(String line) {

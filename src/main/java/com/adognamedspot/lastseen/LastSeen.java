@@ -1,10 +1,7 @@
 package com.adognamedspot.lastseen;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -15,11 +12,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import net.md_5.bungee.api.ChatColor;
+
 public final class LastSeen extends JavaPlugin implements Listener {
-	
-	public List<String> LastList_Name = new ArrayList<String>();
-	public List<Long> LastList_Time = new ArrayList<Long>();
-	public String EMPTY = "-EMPTY VOiD-";
+	public int LastListOccupants = 100;
+	public Object[][] LastList = new Object[LastListOccupants][2];
 	
 	private static LastSeen instance;
 	
@@ -28,7 +25,7 @@ public final class LastSeen extends JavaPlugin implements Listener {
         // TODO Load LastList from disk
     	instance = this;
     	getServer().getPluginManager().registerEvents(this, this);
-    	setDefaultLastList();
+    	// setDefaultLastList();
     }
     
     @Override
@@ -41,7 +38,7 @@ public final class LastSeen extends JavaPlugin implements Listener {
     	if (cmd.getName().equalsIgnoreCase("last")) {
     		// doSomething
     		if (args.length != 1) {
-    			lastPlayer(sender, "");
+    			lastPlayer(sender, "10");
     		} else {
     			lastPlayer(sender, args[0]);
     		}
@@ -78,36 +75,57 @@ public final class LastSeen extends JavaPlugin implements Listener {
     }
  
     public void HandleLastList(Player player) {
-    	LastList_Name.set(4, LastList_Name.get(3));
-    	LastList_Time.set(4, LastList_Time.get(3));
-    	LastList_Name.set(3, LastList_Name.get(2));
-    	LastList_Time.set(3, LastList_Time.get(2));
-    	LastList_Name.set(2, LastList_Name.get(1));
-    	LastList_Time.set(2, LastList_Time.get(1));
-    	LastList_Name.set(1, LastList_Name.get(0));
-    	LastList_Time.set(1, LastList_Time.get(0));
-    	LastList_Name.set(0, player.getName());
-    	LastList_Time.set(0, System.currentTimeMillis());
+    	// Add Player to beginning of list, cycle everyone else down one spot
+       	for (int x = (LastListOccupants - 1); x > 0; x--) {
+       		if (LastList[x-1][0] != null) {
+       			LastList[x][0] = LastList[x-1][0];
+       			LastList[x][1] = LastList[x-1][1];
+       		}
+       	}
+       	LastList[0][0] = player.getName();
+       	LastList[0][1] = System.currentTimeMillis();
     }
     
     public boolean lastPlayer(CommandSender sender, String arg) {
-    	if (LastList_Name.get(0) != EMPTY) {
-    		sender.sendMessage("These guys left just a bit ago..");
-    		sender.sendMessage("----------------------------------------");
-    	}
-    	else {
-    		sender.sendMessage("No one has left since the last reboot.");
+    	int length = 10;
+    	
+    	if (isInteger(arg)) {
+    		length = Integer.parseInt(arg);
+    	} 
+    	if (length > LastListOccupants) {
+    		length = LastListOccupants;
+    		sender.sendMessage("Giving you the maximum (" + LastListOccupants + ") number of entries.");
+    	} else if (length < 1) {
+    		sender.sendMessage("How do you expect me to do that? Here's a random amount.");
+    		Random rn = new Random();
+    		length = rn.nextInt(10) + 1;
     	}
     	
-    	for (int i = 4; i >= 0; i--) {
-        	if (LastList_Name.get(i) != EMPTY) {
-        	    sender.sendMessage((i+1) +". - " + LastList_Name.get(i) + " - " + 
-        			wayback(System.currentTimeMillis() - (Long) LastList_Time.get(i)));
-        	}    		
+		sender.sendMessage(ChatColor.YELLOW + "--------------------" 
+				+ ChatColor.BLUE + "Last Online" + ChatColor.YELLOW + "---------------------");
+    	if (LastList[0][0] == null) {
+    		sender.sendMessage(ChatColor.RED + "No one has left since the last reboot.");
+    	} else {
+    		for (int i = 0; i < length - 1; i++) {
+    			if (LastList[i][0] != null) {
+    				sender.sendMessage(" " + LastList[i][0] + " - " + ChatColor.GRAY 
+    						+ wayback(System.currentTimeMillis() - (long)LastList[i][1]) + " ago.");
+    			}
+    		}
     	}
+		sender.sendMessage(ChatColor.YELLOW + "--------------------------------------------------");
     	return true;
     }
 
+    public static boolean isInteger(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+    
     public boolean seenPlayer(CommandSender sender, String arg) {
     	Player target = Bukkit.getServer().getPlayer(arg);
 
@@ -134,11 +152,11 @@ public final class LastSeen extends JavaPlugin implements Listener {
     }
     
     public void setDefaultLastList() {
-    	getLogger().log(Level.INFO, "Setting default Last-on list.");
-    	for (int x = 0; x < 5; x++) {
-    		LastList_Name.add(EMPTY);
-    		LastList_Time.add(0, System.currentTimeMillis());
-    	}
+//    	getLogger().log(Level.INFO, "Setting default Last-on list.");
+//    	for (int x = 0; x < 5; x++) {
+//    		LastList_Name.add(EMPTY);
+//    		LastList_Time.add(0, System.currentTimeMillis());
+//    	}
     }
     
     /**
