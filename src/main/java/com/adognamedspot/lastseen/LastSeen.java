@@ -25,7 +25,6 @@ public final class LastSeen extends JavaPlugin implements Listener {
         // TODO Load LastList from disk
     	instance = this;
     	getServer().getPluginManager().registerEvents(this, this);
-    	// setDefaultLastList();
     }
     
     @Override
@@ -147,16 +146,9 @@ public final class LastSeen extends JavaPlugin implements Listener {
     }
     
     public boolean PlayerInfo(CommandSender sender, String arg) {
+    	PlayerData.processStats(arg, 0);
     	PlayerData.getInfo(sender, arg);
     	return true;
-    }
-    
-    public void setDefaultLastList() {
-//    	getLogger().log(Level.INFO, "Setting default Last-on list.");
-//    	for (int x = 0; x < 5; x++) {
-//    		LastList_Name.add(EMPTY);
-//    		LastList_Time.add(0, System.currentTimeMillis());
-//    	}
     }
     
     /**

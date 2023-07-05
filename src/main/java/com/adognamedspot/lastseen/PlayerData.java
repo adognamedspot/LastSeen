@@ -142,9 +142,20 @@ public class PlayerData {
 		}
 	}
 	
+	public static void processStats(String name, long sessionTotal) {
+		File file = getFile(getUUIDbyName(name));
+		if (!file.exists())
+			return;
+		processStats(file, sessionTotal);
+	}
+	
 	public static void processStats(Player player, long sessionTotal) {
 		File file = getFile(player);
-		FileConfiguration Config = getConfig(file, player);
+		processStats(file, sessionTotal);
+	}
+	
+	public static void processStats(File file, long sessionTotal) {
+		FileConfiguration Config = YamlConfiguration.loadConfiguration(file);
 		int currentYear = Integer.parseInt(getYear());
 		int currentMonth = Integer.parseInt(getMonth());
 		int currentWeek = getWeekNumber();
@@ -259,6 +270,11 @@ public class PlayerData {
 		FileConfiguration config = YamlConfiguration.loadConfiguration(file);
 		Player target = Bukkit.getServer().getPlayer(name);
 		
+		if (!file.exists()) {
+			sender.sendMessage(ChatColor.GRAY + "The player " 
+					+ ChatColor.WHITE + name + ChatColor.GRAY + " does not exist.");	
+			return;
+		}
 		if (config == null)
 			return;
 		
