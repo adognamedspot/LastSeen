@@ -36,6 +36,11 @@ public class PlayerData {
 		return f;
 	}
 	
+	public static File getLastList() {
+        File f = new File(Bukkit.getServer().getPluginManager().getPlugin("LastSeen").getDataFolder(), File.separator + "LastList.yml");
+		return f;
+	}
+	
 	public static FileConfiguration getConfig(File file, Player player) {
 		FileConfiguration config;
 		
@@ -126,6 +131,41 @@ public class PlayerData {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+	}
+	
+	public static void saveLastList( ) {
+		File file = getLastList();
+		FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+		
+		file.delete();
+
+		Bukkit.getLogger().info("Saving Last list to disk.");
+		
+		for (int i = 0; i < LastSeen.LastListOccupants; i++) {
+			if (LastSeen.LastList[i][0] != null) {
+				config.set(i + ".Name", LastSeen.LastList[i][0]);
+				config.set(i + ".Time", LastSeen.LastList[i][1]);
+			}
+		}
+		
+		save(config, file);
+	}
+	
+	public static void loadLastList( ) {
+		File file = getLastList();
+		FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+		
+		if (!file.exists())
+			return;
+		
+		Bukkit.getLogger().info("Loading Last list from disk.");
+		
+		for (int i = 0; i < LastSeen.LastListOccupants; i++) {
+			if (config.getDouble(i + ".Time") != 0) {
+				LastSeen.LastList[i][0] = config.get(i + ".Name");
+				LastSeen.LastList[i][1] = (long)config.getDouble(i + ".Time");
+			}
 		}
 	}
 	

@@ -15,29 +15,28 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.md_5.bungee.api.ChatColor;
 
 public final class LastSeen extends JavaPlugin implements Listener {
-	public int LastListOccupants = 100;
-	public Object[][] LastList = new Object[LastListOccupants][2];
+	public static int LastListOccupants = 100;
+	public static Object[][] LastList = new Object[LastListOccupants][2];
 	
 	private static LastSeen instance;
 	
     @Override
     public void onEnable() {
-        // TODO Load LastList from disk
     	instance = this;
     	getServer().getPluginManager().registerEvents(this, this);
+    	PlayerData.loadLastList();
     }
     
     @Override
     public void onDisable() {
-    	// TODO Save LastList to disk
+    	PlayerData.saveLastList();
     }
     
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
     	if (cmd.getName().equalsIgnoreCase("last")) {
-    		// doSomething
     		if (args.length != 1) {
-    			lastPlayer(sender, "10");
+    			lastPlayer(sender, "10");	// Default LastList Length
     		} else {
     			lastPlayer(sender, args[0]);
     		}
@@ -86,13 +85,13 @@ public final class LastSeen extends JavaPlugin implements Listener {
     }
     
     public boolean lastPlayer(CommandSender sender, String arg) {
-    	int length = 10;
+    	int length = 0;
     	
     	if (isInteger(arg)) {
     		length = Integer.parseInt(arg);
     	} 
     	if (length > LastListOccupants) {
-    		length = LastListOccupants;
+    		length = LastListOccupants;		// Maximum LastList Length
     		sender.sendMessage("Giving you the maximum (" + LastListOccupants + ") number of entries.");
     	} else if (length < 1) {
     		sender.sendMessage("How do you expect me to do that? Here's a random amount.");
@@ -105,9 +104,9 @@ public final class LastSeen extends JavaPlugin implements Listener {
     	if (LastList[0][0] == null) {
     		sender.sendMessage(ChatColor.RED + "No one has left since the last reboot.");
     	} else {
-    		for (int i = 0; i < length - 1; i++) {
+    		for (int i = 0; i < length; i++) {
     			if (LastList[i][0] != null) {
-    				sender.sendMessage(" " + LastList[i][0] + " - " + ChatColor.GRAY 
+    				sender.sendMessage(" " + (i+1) + ". " + LastList[i][0] + " - " + ChatColor.GRAY 
     						+ wayback(System.currentTimeMillis() - (long)LastList[i][1]) + " ago.");
     			}
     		}
