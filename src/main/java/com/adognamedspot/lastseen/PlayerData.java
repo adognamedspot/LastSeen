@@ -2,11 +2,14 @@ package com.adognamedspot.lastseen;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -41,11 +44,27 @@ public class PlayerData {
 		return f;
 	}
 	
+	public static File getServerStats() {
+        File f = new File(Bukkit.getServer().getPluginManager().getPlugin("LastSeen").getDataFolder(), File.separator + "ServerStats.yml");
+		return f;
+	}
+	
 	public static FileConfiguration getConfig(File file, Player player) {
 		FileConfiguration config;
 		
 		if (!file.exists())
 			config = createFile(file, player);
+		else
+			config = YamlConfiguration.loadConfiguration(file);
+
+		return config;
+	}
+	
+	public static FileConfiguration getServerConfig(File file) {
+		FileConfiguration config;
+		
+		if (!file.exists())
+			config = createServerFile(file);
 		else
 			config = YamlConfiguration.loadConfiguration(file);
 
@@ -95,6 +114,7 @@ public class PlayerData {
             playerData.set("Data.Join Date.Month", Integer.parseInt(getMonth()));
             playerData.set("Data.Join Date.Day", Integer.parseInt(getDay()));
             playerData.set("Data.Join Date.Year", Integer.parseInt(getYear()));
+            playerData.set("Data.First Played", player.getFirstPlayed());
             playerData.createSection("Last");
             playerData.set("Last.In", 0);
             playerData.set("Last.Out", 0);
@@ -118,6 +138,45 @@ public class PlayerData {
 
             playerData.save(file);
             return playerData;
+        } catch (IOException exception) {
+
+            exception.printStackTrace();
+        }
+		return null;
+	}
+	
+	public static FileConfiguration createServerFile(File file) {
+        try {
+            FileConfiguration serverData = YamlConfiguration.loadConfiguration(file);
+            
+            serverData.createSection("Stats");
+            serverData.createSection("Stats.Yearly");
+            serverData.set("Stats.Yearly.Month", Integer.parseInt(getMonth()));
+            serverData.set("Stats.Yearly.Day", Integer.parseInt(getDay()));
+            serverData.set("Stats.Yearly.Year", Integer.parseInt(getYear()));
+            serverData.set("Stats.Yearly.Total", 0);
+            serverData.set("Stats.Yearly.Player", "");
+            serverData.createSection("Stats.Monthly");
+            serverData.set("Stats.Monthly.Month", Integer.parseInt(getMonth()));
+            serverData.set("Stats.Monthly.Day", Integer.parseInt(getDay()));
+            serverData.set("Stats.Monthly.Year", Integer.parseInt(getYear()));
+            serverData.set("Stats.Monthly.Total", 0);
+            serverData.set("Stats.Monthly.Player", "");
+            serverData.createSection("Stats.Weekly");
+            serverData.set("Stats.Weekly.Month", Integer.parseInt(getMonth()));
+            serverData.set("Stats.Weekly.Day", Integer.parseInt(getDay()));
+            serverData.set("Stats.Weekly.Year", Integer.parseInt(getYear()));
+            serverData.set("Stats.Weekly.Total", 0);
+            serverData.set("Stats.Weekly.Player", "");
+            serverData.createSection("Stats.Daily");
+            serverData.set("Stats.Daily.Month", Integer.parseInt(getMonth()));
+            serverData.set("Stats.Daily.Day", Integer.parseInt(getDay()));
+            serverData.set("Stats.Daily.Year", Integer.parseInt(getYear()));
+            serverData.set("Stats.Daily.Total", 0);
+            serverData.set("Stats.Daily.Player", "");
+
+            serverData.save(file);
+            return serverData;
         } catch (IOException exception) {
 
             exception.printStackTrace();
@@ -186,22 +245,25 @@ public class PlayerData {
 		File file = getFile(getUUIDbyName(name));
 		if (!file.exists())
 			return;
-		processStats(file, sessionTotal);
+		processStats(file, getUUIDbyName(name), sessionTotal);
 	}
 	
 	public static void processStats(Player player, long sessionTotal) {
 		File file = getFile(player);
-		processStats(file, sessionTotal);
+		processStats(file, player.getUniqueId().toString(), sessionTotal);
 	}
 	
-	public static void processStats(File file, long sessionTotal) {
+	public static void processStats(File file, String uuid, long sessionTotal) {
 		FileConfiguration Config = YamlConfiguration.loadConfiguration(file);
+		FileConfiguration Server = getServerConfig(getServerStats());
 		int currentYear = Integer.parseInt(getYear());
 		int currentMonth = Integer.parseInt(getMonth());
 		int currentWeek = getWeekNumber();
 		int currentDay = Integer.parseInt(getDay());
 		// [Year, Month, Week, Day][Y/M/W/D, Total]
-		double[][] Stats = new double[4][2]; 
+		double[][] Stats = new double[4][2];
+		double[] SrvStats = new double[4];
+		
 		
 		if (Config == null)
 			return;
@@ -267,21 +329,65 @@ public class PlayerData {
 		Config.set("Stats.Daily.Day",     Stats[3][0]);
 		Config.set("Stats.Daily.Total",   Stats[3][1]);
 		
-		// All-Time Highs
+		// Player All-Time Highs
 		Stats[0][0] = Config.getDouble("Stats.Yearly.AllTime");
 		Stats[1][0] = Config.getDouble("Stats.Monthly.AllTime");
 		Stats[2][0] = Config.getDouble("Stats.Weekly.AllTime");
 		Stats[3][0] = Config.getDouble("Stats.Daily.AllTime");
 		
-		if (Stats[0][0] < Stats [0][1])
+		if (Stats[0][0] < Stats [0][1]) {
 			Config.set("Stats.Yearly.AllTime", Stats[0][1]);
-		if (Stats[1][0] < Stats [1][1])
+			Stats[0][0] = Stats[0][1];
+		}
+		if (Stats[1][0] < Stats [1][1]) {
 			Config.set("Stats.Monthly.AllTime", Stats[1][1]);
-		if (Stats[2][0] < Stats [2][1])
+			Stats[1][0] = Stats[1][1];
+		}
+		if (Stats[2][0] < Stats [2][1]) {
 			Config.set("Stats.Weekly.AllTime", Stats[2][1]);
-		if (Stats[3][0] < Stats [3][1])
+			Stats[2][0] = Stats[2][1];
+		}
+		if (Stats[3][0] < Stats [3][1]) {
 			Config.set("Stats.Daily.AllTime", Stats[3][1]);
+			Stats[3][0] = Stats[3][1];
+		}
 		
+		// Server All-Time Highs
+		SrvStats[0] = Server.getDouble("Stats.Yearly.Total");
+		SrvStats[1] = Server.getDouble("Stats.Monthly.Total");
+		SrvStats[2] = Server.getDouble("Stats.Weekly.Total");
+		SrvStats[3] = Server.getDouble("Stats.Daily.Total");
+
+		if (SrvStats[0] < Stats[0][0]) {
+            Server.set("Stats.Yearly.Month", Integer.parseInt(getMonth()));
+            Server.set("Stats.Yearly.Day", Integer.parseInt(getDay()));
+            Server.set("Stats.Yearly.Year", Integer.parseInt(getYear()));
+            Server.set("Stats.Yearly.Total", Stats[0][0]);
+            Server.set("Stats.Yearly.Player", Bukkit.getPlayer(UUID.fromString(uuid)).getName());
+		}
+		if (SrvStats[1] < Stats[1][0]) {
+            Server.set("Stats.Monthly.Month", Integer.parseInt(getMonth()));
+            Server.set("Stats.Monthly.Day", Integer.parseInt(getDay()));
+            Server.set("Stats.Monthly.Year", Integer.parseInt(getYear()));
+            Server.set("Stats.Monthly.Total", Stats[1][0]);
+            Server.set("Stats.Monthly.Player", Bukkit.getPlayer(UUID.fromString(uuid)).getName());
+		}
+		if (SrvStats[2] < Stats[2][0]) {
+            Server.set("Stats.Weekly.Month", Integer.parseInt(getMonth()));
+            Server.set("Stats.Weekly.Day", Integer.parseInt(getDay()));
+            Server.set("Stats.Weekly.Year", Integer.parseInt(getYear()));
+            Server.set("Stats.Weekly.Total", Stats[2][0]);
+            Server.set("Stats.Weekly.Player", Bukkit.getPlayer(UUID.fromString(uuid)).getName());
+		}
+		if (SrvStats[3] < Stats[3][0]) {
+            Server.set("Stats.Daily.Month", Integer.parseInt(getMonth()));
+            Server.set("Stats.Daily.Day", Integer.parseInt(getDay()));
+            Server.set("Stats.Daily.Year", Integer.parseInt(getYear()));
+            Server.set("Stats.Daily.Total", Stats[3][0]);
+            Server.set("Stats.Daily.Player", Bukkit.getPlayer(UUID.fromString(uuid)).getName());
+		}
+
+		save(Server, getServerStats());
 		save(Config, file);
 	}
 	
@@ -304,6 +410,19 @@ public class PlayerData {
 		
 		return (long)config.getDouble("Last.Out");
 	}
+	
+	public static void hardJoin() {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			Join(p);
+		}
+	}
+	
+	public static void hardQuit() {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			Quit(p);
+			LastSeen.HandleLastList(p);
+		}
+	}
 
 	public static void getInfo(CommandSender sender, String name) {
 		File file = getFile(getUUIDbyName(name));
@@ -322,9 +441,10 @@ public class PlayerData {
 		sender.sendMessage(ChatColor.GRAY + "      Name: " + ChatColor.WHITE + name);
 		sender.sendMessage(ChatColor.GRAY + "      UUiD: " + ChatColor.WHITE + config.getString("Data.UUID"));
 		sender.sendMessage(ChatColor.GRAY + " Join Date: " + ChatColor.WHITE
-				+ MonthName(config.getInt("Data.Join Date.Month")) + " " 
-				+ config.getInt("Data.Join Date.Day") + ", " 
-				+ config.getInt("Data.Join Date.Year"));
+				+ millisToDate((long) config.getDouble("Data.First Played")));
+//				+ MonthName(config.getInt("Data.Join Date.Month")) + " " 
+//				+ config.getInt("Data.Join Date.Day") + ", " 
+//				+ config.getInt("Data.Join Date.Year"));
 		if (target != null) {
 			sender.sendMessage(ChatColor.AQUA + "-----------------------" 
 					+ ChatColor.GREEN + "ONLiNE" + ChatColor.AQUA + "----------------------");
@@ -357,6 +477,48 @@ public class PlayerData {
 		sender.sendMessage(ChatColor.GRAY + "  Best Day: " + ChatColor.WHITE
 			+ LastSeen.wayback((long)config.getDouble("Stats.Daily.AllTime")));
 		sender.sendMessage(ChatColor.AQUA + "--------------------------------------------------");	
+	}
+
+	public static void serverStats(CommandSender sender) {
+		FileConfiguration Server = getServerConfig(getServerStats());
+		sender.sendMessage(ChatColor.WHITE + "--------------------------------------------------");
+		sender.sendMessage(ChatColor.GREEN + "            Server All-Time Records");
+		sender.sendMessage(ChatColor.WHITE + "--------------------------------------------------");
+		sender.sendMessage(ChatColor.GRAY + "Best Year: " + ChatColor.YELLOW
+				+ LastSeen.wayback((long)Server.getDouble("Stats.Yearly.Total")));
+		sender.sendMessage(ChatColor.GRAY + "Set by: " + ChatColor.YELLOW
+				+ Server.getString("Stats.Yearly.Player") + ChatColor.GRAY + " on " + ChatColor.YELLOW
+				+ MonthName(Server.getInt("Stats.Yearly.Month")) + " " + Server.getInt("Stats.Yearly.Day")
+				+ ", " + Server.getInt("Stats.Yearly.Year"));
+		sender.sendMessage(ChatColor.WHITE + "--------------------------------------------------");
+		sender.sendMessage(ChatColor.GRAY + "Best Month: " + ChatColor.YELLOW
+				+ LastSeen.wayback((long)Server.getDouble("Stats.Monthly.Total")));
+		sender.sendMessage(ChatColor.GRAY + "Set by: " + ChatColor.YELLOW
+				+ Server.getString("Stats.Monthly.Player") + ChatColor.GRAY + " on " + ChatColor.YELLOW
+				+ MonthName(Server.getInt("Stats.Monthly.Month")) + " " + Server.getInt("Stats.Monthly.Day")
+				+ ", " + Server.getInt("Stats.Monthly.Year"));
+		sender.sendMessage(ChatColor.WHITE + "--------------------------------------------------");
+		sender.sendMessage(ChatColor.GRAY + "Best Week: " + ChatColor.YELLOW
+				+ LastSeen.wayback((long)Server.getDouble("Stats.Weekly.Total")));
+		sender.sendMessage(ChatColor.GRAY + "Set by: " + ChatColor.YELLOW
+				+ Server.getString("Stats.Weekly.Player") + ChatColor.GRAY + " on " + ChatColor.YELLOW
+				+ MonthName(Server.getInt("Stats.Weekly.Month")) + " " + Server.getInt("Stats.Weekly.Day")
+				+ ", " + Server.getInt("Stats.Weekly.Year"));
+		sender.sendMessage(ChatColor.WHITE + "--------------------------------------------------");
+		sender.sendMessage(ChatColor.GRAY + "Best Day: " + ChatColor.YELLOW
+				+ LastSeen.wayback((long)Server.getDouble("Stats.Daily.Total")));
+		sender.sendMessage(ChatColor.GRAY + "Set by: " + ChatColor.YELLOW
+				+ Server.getString("Stats.Daily.Player") + ChatColor.GRAY + " on " + ChatColor.YELLOW
+				+ MonthName(Server.getInt("Stats.Daily.Month")) + " " + Server.getInt("Stats.Daily.Day")
+				+ ", " + Server.getInt("Stats.Daily.Year"));
+		sender.sendMessage(ChatColor.WHITE + "--------------------------------------------------");
+	}
+	
+	public static String millisToDate(Long millis) {
+		SimpleDateFormat sdf = new SimpleDateFormat("EEEEE, MMMMM dd yyyy");
+		GregorianCalendar calendar = new GregorianCalendar();
+		calendar.setTimeInMillis(millis);
+		return sdf.format(calendar.getTime());
 	}
 	
 	public static String getYear() {

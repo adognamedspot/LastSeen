@@ -24,11 +24,13 @@ public final class LastSeen extends JavaPlugin implements Listener {
     public void onEnable() {
     	instance = this;
     	getServer().getPluginManager().registerEvents(this, this);
+    	PlayerData.hardJoin();
     	PlayerData.loadLastList();
     }
     
     @Override
     public void onDisable() {
+    	PlayerData.hardQuit();
     	PlayerData.saveLastList();
     }
     
@@ -41,6 +43,9 @@ public final class LastSeen extends JavaPlugin implements Listener {
     			lastPlayer(sender, args[0]);
     		}
     		return true;
+    	} else if (cmd.getName().equalsIgnoreCase("stats")) {
+    		PlayerData.serverStats(sender);
+    		return true;
     	} else if (cmd.getName().equalsIgnoreCase("seen")) {
     	    if (args.length != 1) {
     	        return false;
@@ -48,9 +53,14 @@ public final class LastSeen extends JavaPlugin implements Listener {
     	    return seenPlayer(sender, args[0]);
     	} else if (cmd.getName().equalsIgnoreCase("info")) {
 	        if (args.length != 1) {
-	            return false;
+	            return PlayerInfo(sender, sender.getName());
 	        }
-	        return PlayerInfo(sender, args[0]);
+	        if (sender.hasPermission("lastseen.admininfo") || sender.isOp()) {
+	        	return PlayerInfo(sender, args[0]);
+	        } else {
+	        	sender.sendMessage(ChatColor.DARK_RED + "You do not have permission to look at another player's info");
+	        	return true;
+	        }
 	    }
     	return false;
     }
@@ -72,7 +82,7 @@ public final class LastSeen extends JavaPlugin implements Listener {
     	return instance;
     }
  
-    public void HandleLastList(Player player) {
+    public static void HandleLastList(Player player) {
     	// Add Player to beginning of list, cycle everyone else down one spot
        	for (int x = (LastListOccupants - 1); x > 0; x--) {
        		if (LastList[x-1][0] != null) {
@@ -145,7 +155,10 @@ public final class LastSeen extends JavaPlugin implements Listener {
     }
     
     public boolean PlayerInfo(CommandSender sender, String arg) {
-    	PlayerData.processStats(arg, 0);
+    	Player target = Bukkit.getServer().getPlayer(arg);
+    	if (target == null) {
+    		PlayerData.processStats(arg, 0);
+    	}
     	PlayerData.getInfo(sender, arg);
     	return true;
     }

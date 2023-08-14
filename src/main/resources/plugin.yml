@@ -19,5 +19,33 @@ commands:
       usage: /<command> player
       permission: <plugin name>.info
       permission-message: You don't have <permission>
-      
-      
+   stats:
+      description: Displays Top server stats.
+      usage: /<command>
+      permission: <plugin name>.stats   
+      permission-message: You don't have <permission>
+permissions:
+   lastseen.last:
+      description: Allows last command
+      default: true
+   lastseen.seen:
+      description: Allows seen command
+      default: true
+   lastseen.info:
+      description: Allows info command
+      default: true
+   lastseen.admininfo:
+      description: Allows info command to lookup other players
+      default: false
+   lastseen.stats:
+      description: Allows stats command
+      default: true
+   lastseen.*:
+      description: Wildcard permission
+      default: op
+      children:
+         lastseen.last: true
+         lastseen.seen: true
+         lastseen.info: true
+         lastseen.admininfo: true
+         lastseen.stats: true
