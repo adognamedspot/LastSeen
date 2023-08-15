@@ -363,28 +363,28 @@ public class PlayerData {
             Server.set("Stats.Yearly.Day", Integer.parseInt(getDay()));
             Server.set("Stats.Yearly.Year", Integer.parseInt(getYear()));
             Server.set("Stats.Yearly.Total", Stats[0][0]);
-            Server.set("Stats.Yearly.Player", Bukkit.getPlayer(UUID.fromString(uuid)).getName());
+            Server.set("Stats.Yearly.Player", Bukkit.getOfflinePlayer(UUID.fromString(uuid)).getName());
 		}
 		if (SrvStats[1] < Stats[1][0]) {
             Server.set("Stats.Monthly.Month", Integer.parseInt(getMonth()));
             Server.set("Stats.Monthly.Day", Integer.parseInt(getDay()));
             Server.set("Stats.Monthly.Year", Integer.parseInt(getYear()));
             Server.set("Stats.Monthly.Total", Stats[1][0]);
-            Server.set("Stats.Monthly.Player", Bukkit.getPlayer(UUID.fromString(uuid)).getName());
+            Server.set("Stats.Monthly.Player", Bukkit.getOfflinePlayer(UUID.fromString(uuid)).getName());
 		}
 		if (SrvStats[2] < Stats[2][0]) {
             Server.set("Stats.Weekly.Month", Integer.parseInt(getMonth()));
             Server.set("Stats.Weekly.Day", Integer.parseInt(getDay()));
             Server.set("Stats.Weekly.Year", Integer.parseInt(getYear()));
             Server.set("Stats.Weekly.Total", Stats[2][0]);
-            Server.set("Stats.Weekly.Player", Bukkit.getPlayer(UUID.fromString(uuid)).getName());
+            Server.set("Stats.Weekly.Player", Bukkit.getOfflinePlayer(UUID.fromString(uuid)).getName());
 		}
 		if (SrvStats[3] < Stats[3][0]) {
             Server.set("Stats.Daily.Month", Integer.parseInt(getMonth()));
             Server.set("Stats.Daily.Day", Integer.parseInt(getDay()));
             Server.set("Stats.Daily.Year", Integer.parseInt(getYear()));
             Server.set("Stats.Daily.Total", Stats[3][0]);
-            Server.set("Stats.Daily.Player", Bukkit.getPlayer(UUID.fromString(uuid)).getName());
+            Server.set("Stats.Daily.Player", Bukkit.getOfflinePlayer(UUID.fromString(uuid)).getName());
 		}
 
 		save(Server, getServerStats());
